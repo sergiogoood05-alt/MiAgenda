@@ -21,6 +21,39 @@ import {KotlinCodeViewer} from './components/KotlinCodeViewer';
 import {ProgressSummaryCard} from './components/ProgressSummaryCard';
 import {Actividad, Prioridad} from './types/agenda';
 
+type FiltroPrioridad = 'Todas' | Prioridad;
+
+const FILTROS_PRIORIDAD: {
+  value: FiltroPrioridad;
+  label: string;
+  activeClass: string;
+}[] = [
+  {
+    value: 'Todas',
+    label: 'Todas',
+    activeClass:
+      'bg-blue-600 dark:bg-blue-500 text-white border-blue-600 dark:border-blue-500',
+  },
+  {
+    value: 'Alta',
+    label: 'Altas',
+    activeClass:
+      'bg-red-600 dark:bg-red-500 text-white border-red-600 dark:border-red-500',
+  },
+  {
+    value: 'Media',
+    label: 'Medias',
+    activeClass:
+      'bg-amber-600 dark:bg-amber-500 text-white border-amber-600 dark:border-amber-500',
+  },
+  {
+    value: 'Baja',
+    label: 'Bajas',
+    activeClass:
+      'bg-teal-600 dark:bg-teal-500 text-white border-teal-600 dark:border-teal-500',
+  },
+];
+
 function getCurrentClock(): string {
   const now = new Date();
   return now.toLocaleTimeString('es-ES', {
@@ -36,6 +69,7 @@ export default function App() {
   const nextIdRef = useRef(1);
 
   const [busqueda, setBusqueda] = useState('');
+  const [filtroPrioridad, setFiltroPrioridad] = useState<FiltroPrioridad>('Todas');
   const [actividadEditando, setActividadEditando] = useState<Actividad | null>(null);
   const [mostrarCodigo, setMostrarCodigo] = useState(false);
   const [modoOscuro, setModoOscuro] = useState(false);
@@ -95,11 +129,14 @@ export default function App() {
 
   const actividadesFiltradas = useMemo(() => {
     const consulta = busqueda.trim().toLowerCase();
-    if (!consulta) return actividades;
-    return actividades.filter((item) =>
-      item.nombre.toLowerCase().includes(consulta)
-    );
-  }, [actividades, busqueda]);
+    return actividades.filter((item) => {
+      const coincidePrioridad =
+        filtroPrioridad === 'Todas' || item.prioridad === filtroPrioridad;
+      const coincideNombre =
+        !consulta || item.nombre.toLowerCase().includes(consulta);
+      return coincidePrioridad && coincideNombre;
+    });
+  }, [actividades, busqueda, filtroPrioridad]);
 
   return (
     <div className="min-h-screen bg-[#F6F8FA] dark:bg-slate-950 sm:bg-slate-200/80 dark:sm:bg-slate-950 sm:flex sm:items-center sm:justify-center sm:p-5 transition-colors">
@@ -205,6 +242,32 @@ export default function App() {
                 )}
               </div>
 
+              {/* Selector de filtros por prioridad (chips) */}
+              <div
+                role="group"
+                aria-label="Filtrar actividades por prioridad"
+                className="grid grid-cols-4 gap-1.5"
+              >
+                {FILTROS_PRIORIDAD.map((opcion) => {
+                  const activo = filtroPrioridad === opcion.value;
+                  return (
+                    <button
+                      key={opcion.value}
+                      type="button"
+                      onClick={() => setFiltroPrioridad(opcion.value)}
+                      aria-pressed={activo}
+                      className={`min-h-[40px] px-2 py-1.5 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap shrink-0 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 cursor-pointer ${
+                        activo
+                          ? opcion.activeClass
+                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {opcion.label}
+                    </button>
+                  );
+                })}
+              </div>
+
               {actividades.length === 0 ? (
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 px-5 py-9 text-center transition-colors">
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
@@ -220,7 +283,11 @@ export default function App() {
                     Sin resultados
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    No se encontraron actividades que coincidan con «{busqueda.trim()}».
+                    {busqueda.trim() && filtroPrioridad !== 'Todas'
+                      ? `No hay actividades de prioridad ${filtroPrioridad.toLowerCase()} que coincidan con «${busqueda.trim()}».`
+                      : filtroPrioridad !== 'Todas'
+                        ? `No hay actividades registradas con prioridad ${filtroPrioridad.toLowerCase()}.`
+                        : `No se encontraron actividades que coincidan con «${busqueda.trim()}».`}
                   </p>
                 </div>
               ) : (

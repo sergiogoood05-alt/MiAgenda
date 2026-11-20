@@ -148,8 +148,9 @@ fun MiAgendaScreen(
     var mensajeError by remember { mutableStateOf<String?>(null) }
     var mostrarSelectorFecha by remember { mutableStateOf(false) }
 
-    // Estado de la barra de búsqueda
+    // Estado de la barra de búsqueda y filtro por prioridad
     var textoBusqueda by remember { mutableStateOf("") }
+    var filtroPrioridad by remember { mutableStateOf<Prioridad?>(null) }
 
     // Estado para editar una actividad existente
     var actividadEnEdicion by remember { mutableStateOf<Actividad?>(null) }
@@ -167,15 +168,13 @@ fun MiAgendaScreen(
         0
     }
 
-    // Filtrado en tiempo real por nombre
-    val actividadesFiltradas = remember(actividades.toList(), textoBusqueda) {
+    // Filtrado en tiempo real por nombre y prioridad seleccionada
+    val actividadesFiltradas = remember(actividades.toList(), textoBusqueda, filtroPrioridad) {
         val consulta = textoBusqueda.trim()
-        if (consulta.isEmpty()) {
-            actividades.toList()
-        } else {
-            actividades.filter {
-                it.nombre.contains(consulta, ignoreCase = true)
-            }
+        actividades.filter { actividad ->
+            val coincidePrioridad = filtroPrioridad == null || actividad.prioridad == filtroPrioridad
+            val coincideNombre = consulta.isEmpty() || actividad.nombre.contains(consulta, ignoreCase = true)
+            coincidePrioridad && coincideNombre
         }
     }
 
@@ -365,6 +364,29 @@ fun MiAgendaScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // 3b. Selector de filtros (chips) por prioridad debajo de la búsqueda
+            val opcionesFiltro = listOf(
+                null to "Todas",
+                Prioridad.ALTA to "Altas",
+                Prioridad.MEDIA to "Medias",
+                Prioridad.BAJA to "Bajas"
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                opcionesFiltro.forEach { (nivel, etiqueta) ->
+                    FilterChip(
+                        selected = filtroPrioridad == nivel,
+                        onClick = { filtroPrioridad = nivel },
+                        label = { Text(etiqueta) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
