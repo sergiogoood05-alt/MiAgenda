@@ -1,0 +1,6 @@
+{
+  "name": "Mi Agenda",
+  "description": "Aplicación móvil sencilla para organizar actividades diarias con fecha, prioridad, búsqueda en tiempo real y progreso.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
